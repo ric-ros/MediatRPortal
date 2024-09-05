@@ -2,7 +2,7 @@
 
 namespace MediatRPortal.Client.Models;
 
-public class Charge: DesignerSection
+public record Charge: DesignerSection
 {
     public required Guid AssociatedRouteId { get; set; }
     public string? Description { get; set; }

@@ -1,26 +1,34 @@
 ﻿@page "/designer"
 @using MediatR
+@using MediatRPortal.Client.Components.Base
 @using MediatRPortal.Client.Features.Designer.Commands
 @using MediatRPortal.Client.Services
 
 @inject IMediator Mediator
+@inherits NotificationComponentBase<INotification>
 
 
 <PageTitle>Designer</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Designer</MudText>
 
-<MudContainer>
-    <label>
-        <input type="checkbox" @bind="_hasDetails" @bind:after="SetHasDetails" />
-        Show details
-    </label>
+<MudSwitch @bind-Value="_hasDetails" @bind-Value:after="SetHasDetails" Label="Show details" />
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StateHasChanged">StateHasChanged</MudButton>
-</MudContainer>
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-3">
+            <MudText Typo="Typo.h4" GutterBottom="true">Routes</MudText>
+            <MediatRPortal.Client.Components.Batch.Routes />
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Class="pa-3">
+            <MudText Typo="Typo.h4" GutterBottom="true">Charges</MudText>
+            <MediatRPortal.Client.Components.Batch.Charges />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
-<MediatRPortal.Client.Components.Batch.Routes />
-<MediatRPortal.Client.Components.Batch.Charges />
 
 
 @code {

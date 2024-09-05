@@ -2,7 +2,7 @@
 
 namespace MediatRPortal.Client.Models;
 
-public class Route : DesignerSection
+public record Route : DesignerSection
 {
     public string? Origin { get; set; }
     public string? Destination { get; set; }

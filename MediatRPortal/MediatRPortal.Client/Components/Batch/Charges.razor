@@ -1,4 +1,5 @@
 ﻿@using MediatR
+@using MediatRPortal.Client.Components.Base
 @using MediatRPortal.Client.Features.Charges.Notifications
 @using MediatRPortal.Client.Features.Designer.Notifications
 @using MediatRPortal.Client.Features.Routes.Notifications
@@ -7,50 +8,30 @@
 @inject IJSRuntime JsRuntime
 @inject IMediator Mediator
 
-@implements INotificationHandler<HasCargoDetailsSetNotification>
-@implements INotificationHandler<RouteAddedNotification>
-@implements INotificationHandler<RouteUpdatedNotification>
-@implements INotificationHandler<ChargeAddedNotification>
-@implements INotificationHandler<ChargeUpdatedNotification>
+@inherits NotificationComponentBase<INotification>
 
 
 <style>
-    .table {
-        width: 100%;
-        border-collapse: collapse;
+    .route-row {
+        background-color: var(--mud-palette-primary-lighten);
+        color: var(--mud-palette-primary-text) !important;
     }
 
-        .table th, .table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+        .route-row:hover {
+            background-color: var(--mud-palette-primary) !important;
         }
 
-            .table th:last-child {
-                width: 50px;
-                text-align: center;
-            }
-
-    .column-selector {
-        margin-left: 10px;
-    }
-
-    .route-row {
-        font-weight: bold;
-        background-color: #f0f0f0;
-    }
 
     .charge-row {
         cursor: pointer;
     }
-
-        .charge-row:hover {
-            background-color: #f0f0f0;
-        }
 </style>
 
 <div>
-    <table class="table">
+    <p>
+        @_tempId
+    </p>
+    <MudSimpleTable Hover Dense>
         <thead>
             <tr>
                 <th>Charges</th>
@@ -61,14 +42,14 @@
                 <th>
                     @if (!_hasCargoDetails)
                     {
-                        <select class="column-selector" multiple @onchange="HandleColumnSelection">
+                        <MudSelect MultiSelection @bind-SelectedValues="_selectedColumns">
                             @foreach (var column in _allColumns)
                             {
-                                <option value="@column" selected="@_selectedColumns.Contains(column)">
+                                <MudSelectItem Value="@column" Selected="@_selectedColumns.Contains(column)">
                                     @column
-                                </option>
+                                </MudSelectItem>
                             }
-                        </select>
+                        </MudSelect>
                     }
                 </th>
             </tr>
@@ -77,9 +58,9 @@
             @foreach (var route in _routes)
             {
                 <tr class="route-row">
-                    <td colspan="@(_selectedColumns.Count + 2)">@route.Origin -> @route.Destination</td>
+                    <td colspan="@(_selectedColumns.Count() + 2)">@route.Origin -> @route.Destination</td>
                 </tr>
-                @foreach (var charge in _chargesByRoute[GetRouteKey(route)])
+                @foreach (var charge in _chargesByRoute[route.Id])
                 {
                     <tr @onclick="() => HandleRowClick(charge, route)" class="charge-row">
                         <td>@charge.Description</td>
@@ -94,12 +75,14 @@
                 }
             }
         </tbody>
-    </table>
+    </MudSimpleTable>
 </div>
 
 @code {
+    private Guid _tempId = Guid.NewGuid();
+
     private List<Route> _routes = new();
-    private Dictionary<string, List<Charge>> _chargesByRoute = new();
+    private Dictionary<Guid, List<Charge>> _chargesByRoute = new();
     private bool _hasCargoDetails;
     private List<string> _allColumns = new List<string>
     {
@@ -107,76 +90,88 @@
         "Column 5", "Column 6", "Column 7", "Column 8", "Column 9", "Column 10"
     };
 
-    private List<string> _selectedColumns = ["Base", "20'", "40'", "40HC"];
+    private IEnumerable<string> _selectedColumns = ["Base", "20'", "40'", "40HC"];
 
-    protected override void OnInitialized()
+    protected override void RegisterNotificationHandlers()
     {
-        base.OnInitialized();
+        base.RegisterNotificationHandlers();
+
+        RegisterNotificationHandler<HasCargoDetailsSetNotification>(HandleCargoDetailsSet);
+        RegisterNotificationHandler<RouteAddedNotification>(HandleRouteAdded);
+        RegisterNotificationHandler<RouteDeletedNotification>(HandleRouteDeleted);
+        RegisterNotificationHandler<RouteUpdatedNotification>(HandleRouteUpdated);
+        RegisterNotificationHandler<RoutesClearedNotification>(HandleRoutesCleared);
+        RegisterNotificationHandler<ChargeAddedNotification>(HandleChargeAdded);
+        RegisterNotificationHandler<ChargeUpdatedNotification>(HandleChargeUpdated);
     }
 
-    // protected override void OnParametersSet()
-    // {
-    //     base.OnParametersSet();
-
-    //     _chargesByRoute = _routes.ToDictionary(GetRouteKey, route => new List<Charge>
-    //     {
-    //         new() {
-    //             AssociatedRouteId = route.Id,
-    //             Description = "Ocean Freight",
-    //             Columns = new Dictionary<string, decimal?> { { "Base", 1000 }, { "20'", 2000 }, { "40'", 3000 }, { "40HC", 4000 } } },
-    //         new() {
-    //             AssociatedRouteId = route.Id,
-    //             Description = "Documentation",
-    //             Columns = new Dictionary<string, decimal?> { { "Base", 100 }, { "20'", 200 }, { "40'", 300 }, { "40HC", 400 } } },
-    //         new() {
-    //             AssociatedRouteId = route.Id,
-    //             Description = "Customs Clearance",
-    //             Columns = new Dictionary<string, decimal?> { { "Base", 50 }, { "20'", 100 }, { "40'", 150 }, { "40HC", 200 } } }
-    //     });
-
-    // }
-
-    public async Task Handle(HasCargoDetailsSetNotification notification, CancellationToken cancellationToken)
+    public void HandleCargoDetailsSet(HasCargoDetailsSetNotification notification)
     {
         _hasCargoDetails = notification.HasDetails;
 
-        await InvokeAsync(StateHasChanged);
+        StateHasChanged();
     }
 
-    public async Task Handle(RouteAddedNotification notification, CancellationToken cancellationToken)
+
+    private void HandleRouteAdded(RouteAddedNotification notification)
     {
-        _routes.Add(notification.Route);
+        var a = _tempId;
 
-        await InvokeAsync(StateHasChanged);
+        _routes.Add(notification.Route);
+        _chargesByRoute.Add(notification.Route.Id, MockChargeData(notification.Route));
+
+        StateHasChanged();
     }
 
-    public Task Handle(RouteUpdatedNotification notification, CancellationToken cancellationToken)
+    public void HandleRouteUpdated(RouteUpdatedNotification notification)
     {
         var route = _routes.FirstOrDefault(r => r.Id == notification.Route.Id);
 
         if (route is not null)
         {
+            var charges = _chargesByRoute[route.Id];
+
             route.Origin = notification.Route.Origin;
             route.Destination = notification.Route.Destination;
             route.Currency = notification.Route.Currency;
+
+            charges.ForEach(c => c.AssociatedRouteId = route.Id);
+
         }
 
-        return Task.CompletedTask;
+        StateHasChanged();
     }
 
-    public async Task Handle(ChargeAddedNotification notification, CancellationToken cancellationToken)
+    public void HandleRouteDeleted(RouteDeletedNotification notification)
     {
-        if (_chargesByRoute.TryGetValue(GetRouteKey(_routes.FirstOrDefault(r => r.Id == notification.Charge.AssociatedRouteId)), out var charges))
+        var route = _routes.FirstOrDefault(r => r.Id == notification.Route.Id);
+        if (route is not null)
+        {
+            _routes.Remove(route);
+            _chargesByRoute.Remove(route.Id);
+        }
+        StateHasChanged();
+    }
+
+    public void HandleRoutesCleared(RoutesClearedNotification notification)
+    {
+        _routes.Clear();
+        _chargesByRoute.Clear();
+
+        StateHasChanged();
+    }
+
+    public void HandleChargeAdded(ChargeAddedNotification notification)
+    {
+        if (_chargesByRoute.TryGetValue(notification.Charge.AssociatedRouteId, out var charges))
         {
             charges.Add(notification.Charge);
         }
-
-        await InvokeAsync(StateHasChanged);
     }
 
-    public async Task Handle(ChargeUpdatedNotification notification, CancellationToken cancellationToken)
+    public void HandleChargeUpdated(ChargeUpdatedNotification notification)
     {
-        if (_chargesByRoute.TryGetValue(GetRouteKey(_routes.FirstOrDefault(r => r.Id == notification.Charge.AssociatedRouteId)), out var charges))
+        if (_chargesByRoute.TryGetValue(notification.Charge.AssociatedRouteId, out var charges))
         {
             var charge = charges.FirstOrDefault(c => c.Id == notification.Charge.Id);
 
@@ -186,20 +181,13 @@
                 charge.Columns = notification.Charge.Columns;
             }
         }
-
-        await InvokeAsync(StateHasChanged);
     }
 
     private string GetRouteKey(Route? route) => route is null ? "" : $"{route.Origin}-{route.Destination}-{route.Currency}";
 
-    private void HandleColumnSelection(ChangeEventArgs e)
+    private void HandleColumnSelection()
     {
-        var selectedOptions = e.Value as IEnumerable<string>;
 
-        if (selectedOptions is not null)
-        {
-            _selectedColumns = [.. selectedOptions];
-        }
     }
 
     private void HandleRowClick(Charge charge, Route route)
@@ -218,5 +206,30 @@
         return charge.Columns.TryGetValue(columnName, out var value)
             ? value?.ToString() ?? string.Empty
             : string.Empty;
+    }
+
+    private static List<Charge> MockChargeData(Route route)
+    {
+        return new List<Charge>
+        {
+            new()
+            {
+                AssociatedRouteId = route.Id,
+                Description = "Ocean Freight",
+                Columns = new Dictionary<string, decimal?> { { "Base", 1000 }, { "20'", 2000 }, { "40'", 3000 }, { "40HC", 4000 } }
+            },
+            new()
+            {
+                AssociatedRouteId = route.Id,
+                Description = "Documentation",
+                Columns = new Dictionary<string, decimal?> { { "Base", 100 }, { "20'", 200 }, { "40'", 300 }, { "40HC", 400 } }
+            },
+            new()
+            {
+                AssociatedRouteId = route.Id,
+                Description = "Customs Clearance",
+                Columns = new Dictionary<string, decimal?> { { "Base", 50 }, { "20'", 100 }, { "40'", 150 }, { "40HC", 200 } }
+            }
+        };
     }
 }

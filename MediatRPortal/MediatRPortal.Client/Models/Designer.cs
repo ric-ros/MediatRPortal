@@ -1,6 +1,6 @@
 ﻿namespace MediatRPortal.Client.Models;
 
-public class Designer
+public record Designer
 {
     public bool HasCargoDetails { get; set; }
 }

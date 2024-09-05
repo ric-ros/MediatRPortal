@@ -1,3 +1,5 @@
+using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Pages;
 using MediatRPortal.Client.Services;
 using MediatRPortal.Components;
@@ -17,6 +19,9 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(MediatRPortal.Client._Imports).Assembly);
 });
+//builder.Services.AddTransient(typeof(INotificationHandler<>), typeof(NotificationComponentBase<>));
+//builder.Services.AddTransient<INotificationHandler<INotification>, NotificationComponentBase>();
+
 builder.Services.AddScoped<DesignerService>();
 builder.Services.AddScoped<RouteService>();
 
