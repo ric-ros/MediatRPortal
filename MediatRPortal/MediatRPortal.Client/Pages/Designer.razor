@@ -1,0 +1,33 @@
+﻿@page "/designer"
+@using MediatR
+@using MediatRPortal.Client.Features.Designer.Commands
+@using MediatRPortal.Client.Services
+
+@inject IMediator Mediator
+
+
+<PageTitle>Designer</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Designer</MudText>
+
+<MudContainer>
+    <label>
+        <input type="checkbox" @bind="_hasDetails" @bind:after="SetHasDetails" />
+        Show details
+    </label>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StateHasChanged">StateHasChanged</MudButton>
+</MudContainer>
+
+<MediatRPortal.Client.Components.Batch.Routes />
+<MediatRPortal.Client.Components.Batch.Charges />
+
+
+@code {
+    private bool _hasDetails;
+
+    private void SetHasDetails()
+    {
+        Mediator.Send(new SetCargoDetailsCommand(_hasDetails));
+    }
+}

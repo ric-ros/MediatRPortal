@@ -1,0 +1,102 @@
+﻿@using MediatR
+@using MediatRPortal.Client.Features.Designer.Notifications
+@using MediatRPortal.Client.Features.Routes.Commands
+@inject IMediator Mediator
+@implements INotificationHandler<HasCargoDetailsSetNotification>
+
+
+<MudText Typo="Typo.h3" GutterBottom="true">Routes</MudText>
+
+<div>
+    Generate <input type="number" @bind="_routesCount" /> routes
+    <button class="btn btn-primary" @onclick="GenerateRoutes">Generate</button>
+    <button class="btn btn-danger" @onclick="ClearRoutes">Clear</button>
+
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Origin</th>
+            <th>Destination</th>
+            <th>Currency</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var route in _routes)
+        {
+            <tr>
+                <td><MudTextField @bind-Value="route.Origin" @bind-Value:after="() => UpdateRoute(route)" /></td>
+                <td><MudTextField @bind-Value="route.Destination" @bind-Value:after="() => UpdateRoute(route)" /></td>
+                <td><MudTextField @bind-Value="route.Currency" @bind-Value:after="() => UpdateRoute(route)" /></td>
+                <td>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => RemoveRoute(route))">Delete</MudButton>
+                </td>
+            </tr>
+        }
+        <tr>
+            <td><MudTextField @bind-Value="_newRoute.Origin" /></td>
+            <td><MudTextField @bind-Value="_newRoute.Destination" /></td>
+            <td><MudTextField @bind-Value="_newRoute.Currency" /></td>
+            <td>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@AddRoute">Add</MudButton>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
+@code {
+    private List<Route> _routes = [];
+
+    private Route _newRoute = new();
+    private int _routesCount = 10;
+    private bool _hasDetails;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Here you should load existing routes, e.g. from a service
+    }
+
+    public Task Handle(HasCargoDetailsSetNotification notification, CancellationToken cancellationToken)
+    {
+        _hasDetails = notification.HasDetails;
+        return Task.CompletedTask;
+    }
+
+    private async Task AddRoute()
+    {
+        if (string.IsNullOrWhiteSpace(_newRoute.Origin) || string.IsNullOrWhiteSpace(_newRoute.Destination) || string.IsNullOrWhiteSpace(_newRoute.Currency))
+        {
+            return;
+        }
+
+        await Mediator.Send(new AddRouteCommand(_newRoute.Origin, _newRoute.Destination, _newRoute.Currency));
+
+        _newRoute = new();
+    }
+
+    private async Task GenerateRoutes()
+    {
+        for (int i = 0; i < _routesCount; i++)
+        {
+            await Mediator.Send(new AddRouteCommand($"Origin {i}", $"Destination {i}", "AUD"));
+        }
+    }
+
+    private async Task UpdateRoute(Route route)
+    {
+        await Mediator.Send(new UpdateRouteCommand(route.Id, route.Origin ?? "", route.Destination ?? "", route.Currency ?? ""));
+    }
+
+    private async Task RemoveRoute(Route route)
+    {
+        await Mediator.Send(new DeleteRouteCommand(route.Id));
+    }
+
+    private async Task ClearRoutes()
+    {
+        await Mediator.Send(new ClearRoutesCommand());
+    }
+}
