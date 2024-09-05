@@ -13,6 +13,9 @@
 @implements INotificationHandler<ChargeAddedNotification>
 @implements INotificationHandler<ChargeUpdatedNotification>
 
+@* //chuck in base component *@
+@implements IDisposable
+
 
 <style>
     .table {
@@ -79,18 +82,21 @@
                 <tr class="route-row">
                     <td colspan="@(_selectedColumns.Count + 2)">@route.Origin -> @route.Destination</td>
                 </tr>
-                @foreach (var charge in _chargesByRoute[GetRouteKey(route)])
+                if(_chargesByRoute.Count > 0)
                 {
-                    <tr @onclick="() => HandleRowClick(charge, route)" class="charge-row">
-                        <td>@charge.Description</td>
-                        @foreach (var column in _selectedColumns)
-                        {
-                            <td>@(GetChargeValue(charge, column))</td>
-                        }
-                        <td>
-                            <button>x</button>
-                        </td>
-                    </tr>
+                    @foreach (var charge in _chargesByRoute[GetRouteKey(route)])
+                    {
+                        <tr @onclick="() => HandleRowClick(charge, route)" class="charge-row">
+                            <td>@charge.Description</td>
+                            @foreach (var column in _selectedColumns)
+                            {
+                                <td>@(GetChargeValue(charge, column))</td>
+                            }
+                            <td>
+                                <button>x</button>
+                            </td>
+                        </tr>
+                    }
                 }
             }
         </tbody>
@@ -109,9 +115,31 @@
 
     private List<string> _selectedColumns = ["Base", "20'", "40'", "40HC"];
 
+    private static event EventHandler<Charge> OnChargeAdded;
+    private static event EventHandler<Route> OnRouteAdded;
+
+    //chuck in base component
+    private readonly List<Action> _disposes = new List<Action>();
+
+    //chuck in base component
+    public void Dispose()
+    {
+        foreach (var disposable in _disposes)
+        {
+            disposable.Invoke();
+        }
+        _disposes.Clear();
+    }
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
+
+        OnChargeAdded += AddCharge;
+        _disposes.Add(() => OnChargeAdded -= AddCharge);
+        OnRouteAdded += AddRoute;
+        _disposes.Add(() => OnRouteAdded -= AddRoute);
+
     }
 
     // protected override void OnParametersSet()
@@ -145,9 +173,15 @@
 
     public async Task Handle(RouteAddedNotification notification, CancellationToken cancellationToken)
     {
-        _routes.Add(notification.Route);
 
-        await InvokeAsync(StateHasChanged);
+        OnRouteAdded?.Invoke(this, notification.Route);
+    }
+
+    private void AddRoute(object? sender, Route route)
+    {
+        _routes.Add(route);
+
+        this.StateHasChanged();
     }
 
     public Task Handle(RouteUpdatedNotification notification, CancellationToken cancellationToken)
@@ -166,12 +200,18 @@
 
     public async Task Handle(ChargeAddedNotification notification, CancellationToken cancellationToken)
     {
-        if (_chargesByRoute.TryGetValue(GetRouteKey(_routes.FirstOrDefault(r => r.Id == notification.Charge.AssociatedRouteId)), out var charges))
+
+        OnChargeAdded?.Invoke(this, notification.Charge);
+    }
+
+    private void AddCharge(object? sender, Charge charge)
+    {
+        if (_chargesByRoute.TryGetValue(GetRouteKey(_routes.FirstOrDefault(r => r.Id == charge.AssociatedRouteId)), out var charges))
         {
-            charges.Add(notification.Charge);
+            charges.Add(charge);
         }
 
-        await InvokeAsync(StateHasChanged);
+        this.StateHasChanged();
     }
 
     public async Task Handle(ChargeUpdatedNotification notification, CancellationToken cancellationToken)
