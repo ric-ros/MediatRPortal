@@ -1,10 +1,13 @@
 ﻿@page "/designer"
 @using MediatR
 @using MediatRPortal.Client.Components.Base
+@using MediatRPortal.Client.Features.Charges.Notifications
 @using MediatRPortal.Client.Features.Designer.Commands
 @using MediatRPortal.Client.Services
 
 @inject IMediator Mediator
+@inject ISnackbar Snackbar
+
 @inherits NotificationComponentBase<INotification>
 
 
@@ -37,5 +40,17 @@
     private void SetHasDetails()
     {
         Mediator.Send(new SetCargoDetailsCommand(_hasDetails));
+    }
+
+    protected override void RegisterNotificationHandlers()
+    {
+        base.RegisterNotificationHandlers();
+
+        RegisterNotificationHandler<ChargeUpdatedNotification>(HandleChargeUpdated);
+    }
+
+    private void HandleChargeUpdated(ChargeUpdatedNotification notification)
+    {
+        Snackbar.Add($"Charge {notification.Charge.Description} updated", Severity.Success);
     }
 }

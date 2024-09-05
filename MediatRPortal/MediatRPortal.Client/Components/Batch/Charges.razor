@@ -7,6 +7,7 @@
 
 @inject IJSRuntime JsRuntime
 @inject IMediator Mediator
+@inject IDialogService DialogService
 
 @inherits NotificationComponentBase<INotification>
 
@@ -167,6 +168,8 @@
         {
             charges.Add(notification.Charge);
         }
+
+        StateHasChanged();
     }
 
     public void HandleChargeUpdated(ChargeUpdatedNotification notification)
@@ -181,6 +184,8 @@
                 charge.Columns = notification.Charge.Columns;
             }
         }
+
+        StateHasChanged();
     }
 
     private string GetRouteKey(Route? route) => route is null ? "" : $"{route.Origin}-{route.Destination}-{route.Currency}";
@@ -190,15 +195,18 @@
 
     }
 
-    private void HandleRowClick(Charge charge, Route route)
+    private async Task HandleRowClick(Charge charge, Route route)
     {
         // open dialog to change charge values
+        var parameters = new DialogParameters<ChargeDialog> { { x => x.Charge, charge },{ x => x.Route, route} };
 
-        // update charge values
+        _ = await DialogService.ShowAsync<ChargeDialog>("Charge", parameters);
+        // var result = await dialog.Result;
 
-        // show alert in the meantime
-
-        JsRuntime.InvokeVoidAsync("alert", $"Charge {charge.Description} of route {GetRouteKey(route)} clicked");
+        // if (result?.Data is Charge modifiedCharge)
+        // {
+        //     // here we would do the normal update logic but we will handle it with mediator inside the dialog
+        // }
     }
 
     private string GetChargeValue(Charge charge, string columnName)
