@@ -1,16 +1,18 @@
 ﻿using MediatR;
-using MediatRPortal.Client.Features.Designer.Notifications;
-using MediatRPortal.Client.Features.Routes.Notifications;
 using Microsoft.AspNetCore.Components;
-using System.Reflection;
 
 namespace MediatRPortal.Client.Components.Base;
 
+// Has to be generic so MediatR can register the open generic type INotificationHandler<>
 public class NotificationComponentBase<TNotification> : ComponentBase, IDisposable, INotificationHandler<TNotification> where TNotification : INotification
 {
+    // Unique key for each component to store dispose actions
+    public readonly string componentId = $"{Guid.NewGuid()}";
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
+
         RegisterNotificationHandlers();
     }
 
@@ -22,36 +24,64 @@ public class NotificationComponentBase<TNotification> : ComponentBase, IDisposab
     protected void RegisterNotificationHandler<TNestedNotification>(Action<TNestedNotification> handler)
         where TNestedNotification : INotification
     {
-        //NotificationComponentBaseHelper.EventHandlers[typeof(TNestedNotification)].Add(handler);
-        if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(typeof(TNestedNotification), out var handlers))
+        var eventHandlersKey = typeof(TNestedNotification);
+
+        if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
         {
             handlers.Add(handler);
         }
         else
         {
-            NotificationComponentBaseHelper.EventHandlers[typeof(TNestedNotification)] = [handler];
+            NotificationComponentBaseHelper.EventHandlers[eventHandlersKey] = [handler];
         }
 
-        NotificationComponentBaseHelper.Disposes.Add(() =>
-        {
-            //NotificationComponentBaseHelper.EventHandlers.Remove(typeof(TNestedNotification));
-            //NotificationComponentBaseHelper.EventHandlers[typeof(TNestedNotification)].Remove(handler);
+        //NotificationComponentBaseHelper.Disposes.Add(() =>
+        //{
+        //    if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
+        //    {
+        //        handlers.Remove(handler);
+        //        if (handlers.Count == 0)
+        //        {
+        //            NotificationComponentBaseHelper.EventHandlers.Remove(eventHandlersKey);
+        //        }
+        //    }
+        //});
 
-            if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(typeof(TNestedNotification), out var handlers))
+        if (NotificationComponentBaseHelper.Disposes.TryGetValue(componentId, out var disposes))
+        {
+            disposes.Add(() =>
             {
-                handlers.Remove(handler);
-                if (handlers.Count == 0)
+                if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
                 {
-                    NotificationComponentBaseHelper.EventHandlers.Remove(typeof(TNestedNotification));
+                    handlers.Remove(handler);
+                    if (handlers.Count == 0)
+                    {
+                        NotificationComponentBaseHelper.EventHandlers.Remove(eventHandlersKey);
+                    }
                 }
-            }
-        });
+            });
+        }
+        else
+        {
+            NotificationComponentBaseHelper.Disposes[componentId] = [() =>
+            {
+                if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
+                {
+                    handlers.Remove(handler);
+                    if (handlers.Count == 0)
+                    {
+                        NotificationComponentBaseHelper.EventHandlers.Remove(eventHandlersKey);
+                    }
+                }
+            }];
+        }
     }
 
     public Task Handle(TNotification notification, CancellationToken cancellationToken)
     {
-        var notificationType = notification.GetType();
-        if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(notificationType, out var results))
+        var eventHandlersKey = typeof(TNotification);
+
+        if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var results))
         {
             foreach (var result in results)
             {
@@ -65,11 +95,20 @@ public class NotificationComponentBase<TNotification> : ComponentBase, IDisposab
 
     public void Dispose()
     {
-        foreach (var dispose in NotificationComponentBaseHelper.Disposes)
+        //foreach (var dispose in NotificationComponentBaseHelper.Disposes)
+        //{
+        //    dispose();
+        //}
+        //NotificationComponentBaseHelper.Disposes.Clear();
+
+        if (NotificationComponentBaseHelper.Disposes.TryGetValue(componentId, out var disposes))
         {
-            dispose();
+            foreach (var dispose in disposes)
+            {
+                dispose();
+            }
+            NotificationComponentBaseHelper.Disposes.Remove(componentId);
         }
-        NotificationComponentBaseHelper.Disposes.Clear();
 
         GC.SuppressFinalize(this);
     }
@@ -80,6 +119,19 @@ public class NotificationComponentBase<TNotification> : ComponentBase, IDisposab
 /// </summary>
 public static class NotificationComponentBaseHelper
 {
+    /// <summary>
+    /// Dictionary to store event handlers for each notification type in every component
+    /// </summary>
     public static readonly Dictionary<Type, List<Delegate>> EventHandlers = [];
-    public static readonly List<Action> Disposes = [];
+
+    ///// <summary>
+    ///// List to store dispose actions for every component
+    ///// </summary>
+    //public static readonly List<Action> Disposes = [];
+
+
+    /// <summary>
+    /// Dictionary to store dispose actions for belonging component
+    /// </summary>
+    public static readonly Dictionary<string, List<Action>> Disposes = [];
 }

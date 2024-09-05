@@ -4,14 +4,14 @@ namespace MediatRPortal.Client.Services;
 
 public class RouteService
 {
-    private readonly List<Route> _routes = [];
-    public IReadOnlyList<Route> Routes => _routes;
+    private readonly List<RouteModel> _routes = [];
+    public IReadOnlyList<RouteModel> Routes => _routes;
 
     public Guid AddRoute(string origin, string destination, string currency)
     {
         var id = Guid.NewGuid();
 
-        _routes.Add(new Route
+        _routes.Add(new RouteModel
         {
             Id = id,
             Origin = origin,
@@ -42,7 +42,7 @@ public class RouteService
         }
     }
 
-    public Route? GetRoute(Guid routeId)
+    public RouteModel? GetRoute(Guid routeId)
     {
         return _routes.FirstOrDefault(r => r.Id == routeId);
     }

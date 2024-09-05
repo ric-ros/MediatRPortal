@@ -2,4 +2,4 @@
 
 namespace MediatRPortal.Client.Models;
 
-public record GetDesignerInfoQuery : IRequest<Designer>;
+public record GetDesignerInfoQuery : IRequest<DesignerModel>;

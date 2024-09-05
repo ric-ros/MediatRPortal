@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using MediatRPortal.Client.Features.Designer.Notifications;
 
-namespace MediatRPortal.Client.Features.Designer.Commands;
+namespace MediatRPortal.Client.Features.Designer.CommandsHandlers;
 
 public record SetCargoDetailsCommand(bool HasCargoDetails) : IRequest;
 

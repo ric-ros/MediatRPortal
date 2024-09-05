@@ -1,8 +1,10 @@
-﻿@page "/designer"
+﻿@page "/precompiled-designer"
 @using MediatR
 @using MediatRPortal.Client.Components.Base
+@using MediatRPortal.Client.Features.Charges.CommandsHandlers
 @using MediatRPortal.Client.Features.Charges.Notifications
 @using MediatRPortal.Client.Features.Designer.CommandsHandlers
+@using MediatRPortal.Client.Features.Routes.CommandsHandlers
 @using MediatRPortal.Client.Features.Routes.Notifications
 @using MediatRPortal.Client.Services
 
@@ -23,12 +25,12 @@
 <MudGrid>
     <MudItem xs="12">
         <MudPaper Class="pa-3">
-            <MediatRPortal.Client.Components.Batch.Routes />
+            <MediatRPortal.Client.Components.Batch.Routes InitialRoutes="_designer.Routes" />
         </MudPaper>
     </MudItem>
     <MudItem xs="12">
         <MudPaper Class="pa-3">
-            <MediatRPortal.Client.Components.Batch.Charges />
+            <MediatRPortal.Client.Components.Batch.Charges InitialCharges="_designer.Charges" InitialRoutes="_designer.Routes" />
         </MudPaper>
     </MudItem>
 </MudGrid>
@@ -38,9 +40,22 @@
 @code {
     private DesignerModel _designer = new();
 
-    private void SetHasDetails()
+    protected override async Task OnInitializedAsync()
     {
-        Mediator.Send(new SetCargoDetailsCommand(_designer.HasCargoDetails));
+        await base.OnInitializedAsync();
+
+        // mock an initial data
+        for (int i = 0; i < 5; i++)
+        {
+            var routeId = await Mediator.Send(new AddRouteCommand($"Origin {i}", $"Destination {i}", $"AUD"));
+
+            var charges = Components.Batch.Charges.MockChargeData(routeId);
+
+            foreach (var charge in charges)
+            {
+                await Mediator.Send(new AddChargeCommand(routeId, charge.Description, charge.Columns));
+            }
+        }
     }
 
     #region Notification handlers
@@ -125,4 +140,9 @@
         StateHasChanged();
     }
     #endregion
+
+    private void SetHasDetails()
+    {
+        Mediator.Send(new SetCargoDetailsCommand(_designer.HasCargoDetails));
+    }
 }

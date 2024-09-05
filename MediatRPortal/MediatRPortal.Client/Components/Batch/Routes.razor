@@ -1,18 +1,20 @@
 ﻿@using MediatR
 @using MediatRPortal.Client.Components.Base
+@using MediatRPortal.Client.Features.Charges.CommandsHandlers
 @using MediatRPortal.Client.Features.Designer.Notifications
-@using MediatRPortal.Client.Features.Routes.Commands
+@using MediatRPortal.Client.Features.Routes.CommandsHandlers
 
 @inject IMediator Mediator
 @inherits NotificationComponentBase<INotification>
 
+<MudText Typo="Typo.h4" GutterBottom="true">Routes <MudText Typo="Typo.caption">(id: @componentId)</MudText></MudText>
 
 <div class="d-flex justify-space-around align-center">
     <MudIcon Icon="@(_hasDetails ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)" /> Has details
 
     <MudSpacer />
 
-    <MudTextField @bind-Value="_routesCount" Label="Generate routes" />
+    <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="_routesCount" Label="Generate routes" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateRoutes">Generate</MudButton>
     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ClearRoutes">Clear</MudButton>
 </div>
@@ -30,18 +32,18 @@
         @foreach (var route in _routes)
         {
             <tr>
-                <td><MudTextField @bind-Value="route.Origin" @bind-Value:after="() => UpdateRoute(route)" /></td>
-                <td><MudTextField @bind-Value="route.Destination" @bind-Value:after="() => UpdateRoute(route)" /></td>
-                <td><MudTextField @bind-Value="route.Currency" @bind-Value:after="() => UpdateRoute(route)" /></td>
+                <td><MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="route.Origin" @bind-Value:after="() => UpdateRoute(route)" /></td>
+                <td><MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="route.Destination" @bind-Value:after="() => UpdateRoute(route)" /></td>
+                <td><MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="route.Currency" @bind-Value:after="() => UpdateRoute(route)" /></td>
                 <td>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => RemoveRoute(route))">Delete</MudButton>
                 </td>
             </tr>
         }
         <tr>
-            <td><MudTextField @bind-Value="_newRoute.Origin" Label="Origin" /></td>
-            <td><MudTextField @bind-Value="_newRoute.Destination" Label="Destination" /></td>
-            <td><MudTextField @bind-Value="_newRoute.Currency" Label="Currency" /></td>
+            <td><MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="_newRoute.Origin" Label="Origin" /></td>
+            <td><MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="_newRoute.Destination" Label="Destination" /></td>
+            <td><MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="_newRoute.Currency" Label="Currency" /></td>
             <td>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@AddRoute">Add</MudButton>
             </td>
@@ -51,11 +53,25 @@
 
 
 @code {
-    private List<Route> _routes = [];
+    [Parameter]
+    public List<RouteModel>? InitialRoutes { get; set; }
 
-    private Route _newRoute = new();
+    private List<RouteModel> _routes = [];
+
+    private RouteModel _newRoute = new();
     private int _routesCount = 1;
     private bool _hasDetails;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (InitialRoutes is not null)
+        {
+            _routes = [.. InitialRoutes];
+        }
+
+    }
 
     protected override void RegisterNotificationHandlers()
     {
@@ -90,7 +106,7 @@
         var actualRoutesCount = _routes.Count + 1;
         for (int i = actualRoutesCount; i < _routesCount + actualRoutesCount; i++)
         {
-            var routeToAdd = new Route
+            var routeToAdd = new RouteModel
                 {
                     Origin = $"Origin {i}",
                     Destination = $"Destination {i}",
@@ -103,12 +119,12 @@
         }
     }
 
-    private async Task UpdateRoute(Route route)
+    private async Task UpdateRoute(RouteModel route)
     {
         await Mediator.Send(new UpdateRouteCommand(route.Id, route.Origin ?? "", route.Destination ?? "", route.Currency ?? ""));
     }
 
-    private async Task RemoveRoute(Route route)
+    private async Task RemoveRoute(RouteModel route)
     {
         await Mediator.Send(new DeleteRouteCommand(route.Id));
 

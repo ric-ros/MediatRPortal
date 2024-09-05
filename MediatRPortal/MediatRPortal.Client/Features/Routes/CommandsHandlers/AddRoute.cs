@@ -1,11 +1,10 @@
 ﻿using MediatR;
-using MediatRPortal.Client.Features.Charges.Commands;
-using MediatRPortal.Client.Features.Routes.Commands;
 using MediatRPortal.Client.Features.Routes.Notifications;
 using MediatRPortal.Client.Models;
-using MediatRPortal.Client.Services;
 
-namespace MediatRPortal.Client.Features.Routes.Handlers;
+namespace MediatRPortal.Client.Features.Routes.CommandsHandlers;
+
+public record AddRouteCommand(string Origin, string Destination, string Currency) : IRequest<Guid>;
 
 public class AddRouteCommandHandler : IRequestHandler<AddRouteCommand, Guid>
 {
@@ -18,7 +17,7 @@ public class AddRouteCommandHandler : IRequestHandler<AddRouteCommand, Guid>
 
     public async Task<Guid> Handle(AddRouteCommand request, CancellationToken cancellationToken)
     {
-        var route = new Route { Origin = request.Origin, Destination = request.Destination };
+        var route = new RouteModel { Origin = request.Origin, Destination = request.Destination };
         await _mediator.Publish(new RouteAddedNotification(route), cancellationToken);
         return route.Id;
     }

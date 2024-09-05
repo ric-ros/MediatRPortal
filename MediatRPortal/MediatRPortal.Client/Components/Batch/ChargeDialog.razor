@@ -1,5 +1,5 @@
 ﻿@using MediatR
-@using MediatRPortal.Client.Features.Charges.Commands
+@using MediatRPortal.Client.Features.Charges.CommandsHandlers
 
 @inject IMediator Mediator
 
@@ -31,9 +31,9 @@
     private MudDialogInstance? MudDialog { get; set; }
 
     [Parameter]
-    public required Route Route { get; set; }
+    public required RouteModel Route { get; set; }
     [Parameter]
-    public required Charge Charge { get; set; }
+    public required ChargeModel Charge { get; set; }
 
     private Dictionary<string, decimal?> _columns = [];
 

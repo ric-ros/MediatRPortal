@@ -20,7 +20,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(MediatRPortal.Client._Imports).Assembly);
 });
 //builder.Services.AddTransient(typeof(INotificationHandler<>), typeof(NotificationComponentBase<>));
-//builder.Services.AddTransient<INotificationHandler<INotification>, NotificationComponentBase>();
+// No need to register the open generic type INotificationHandler<> as MediatR does this for us
 
 builder.Services.AddScoped<DesignerService>();
 builder.Services.AddScoped<RouteService>();
