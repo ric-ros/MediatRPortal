@@ -1,10 +1,11 @@
 ﻿using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Features.Routes.Notifications;
 using MediatRPortal.Client.Models;
 
 namespace MediatRPortal.Client.Features.Routes.CommandsHandlers;
 
-public record DeleteRouteCommand(Guid RouteId) : IRequest;
+public record DeleteRouteCommand(Guid SessionId, Guid RouteId) : RequestBase(SessionId);
 
 public class DeleteRouteCommandHandler : IRequestHandler<DeleteRouteCommand>
 {
@@ -19,6 +20,6 @@ public class DeleteRouteCommandHandler : IRequestHandler<DeleteRouteCommand>
     {
         var route = new RouteModel { Id = request.RouteId };
 
-        await _mediator.Publish(new RouteDeletedNotification(route), cancellationToken);
+        await _mediator.Publish(new RouteDeletedNotification(request.SessionId, route), cancellationToken);
     }
 }

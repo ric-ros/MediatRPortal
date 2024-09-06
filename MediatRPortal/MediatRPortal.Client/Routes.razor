@@ -1,6 +1,22 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+﻿@using MediatRPortal.Client.Services
+
+<Router AppAssembly="typeof(Program).Assembly">
+
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        <CascadingValue Value="SessionId" IsFixed>
+
+            <p>
+                Session id: @SessionId
+            </p>
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+            @* <FocusOnNavigate RouteData="routeData" Selector="h1" /> *@
+
+        </CascadingValue>
     </Found>
+
 </Router>
+
+@code {
+    private Guid _sessionId = Guid.NewGuid();
+    Guid SessionId => _sessionId;
+}

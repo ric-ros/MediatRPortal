@@ -21,18 +21,19 @@
         <MudPaper Outlined Class="px-4 py-8">
             @foreach (var eventHandler in NotificationComponentBaseHelper.EventHandlers)
             {
-                <MudText Typo="Typo.body2">@eventHandler.Key.Name</MudText>
+                <MudText Typo="Typo.body2">@eventHandler.Key.SessionId @eventHandler.Key.NotificationType.Name</MudText>
+                @* <MudText Typo="Typo.body2">@eventHandler.Key.Name</MudText> *@
             }
         </MudPaper>
     </MudPopover>
 
-    <MudNavLink OnClick="() => _openDisposes = !_openDisposes">Components to dispose: @NotificationComponentBaseHelper.Disposes.Count</MudNavLink>
+    <MudNavLink OnClick="() => _openDisposes = !_openDisposes">Components to dispose: @NotificationComponentBaseHelper.DisposeActions.Count</MudNavLink>
     <MudOverlay @bind-Visible="_openDisposes" DarkBackground="true" ZIndex="9999" AutoClose="true" />
     <MudPopover Open="_openDisposes" OverflowBehavior="OverflowBehavior.FlipAlways"
                 AnchorOrigin="Origin.CenterRight" TransformOrigin="Origin.CenterLeft" Paper="false">
         <MudPaper Outlined Class="px-4 py-8">
             <MudText Typo="Typo.caption">Written in the component's title</MudText>
-            @foreach (var dispose in NotificationComponentBaseHelper.Disposes)
+            @foreach (var dispose in NotificationComponentBaseHelper.DisposeActions)
             {
                 <MudText Typo="Typo.body2">@dispose.Key</MudText>
             }

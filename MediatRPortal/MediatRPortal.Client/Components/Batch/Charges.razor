@@ -10,9 +10,9 @@
 @inject IMediator Mediator
 @inject IDialogService DialogService
 
-@inherits NotificationComponentBase<INotification>
+@inherits NotificationComponentBase<NotificationBase>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Charges <MudText Typo="Typo.caption">(id: @componentId)</MudText></MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">Charges <MudText Typo="Typo.caption">(id: @ComponentId)</MudText></MudText>
 
 <style>
     .route-row {
@@ -144,22 +144,30 @@
     {
         base.RegisterNotificationHandlers();
 
-        RegisterNotificationHandler<HasCargoDetailsSetNotification>(HandleCargoDetailsSet);
+        RegisterNotificationHandler<HasCargoDetailsSetNotification>(HandleCargoDetailsSet, ThenMethod);
 
-        RegisterNotificationHandler<RouteAddedNotification>(HandleRouteAdded);
-        RegisterNotificationHandler<RouteDeletedNotification>(HandleRouteDeleted);
-        RegisterNotificationHandler<RouteUpdatedNotification>(HandleRouteUpdated);
-        RegisterNotificationHandler<RoutesClearedNotification>(HandleRoutesCleared);
+        RegisterNotificationHandler<RouteAddedNotification>(HandleRouteAdded, ThenMethod);
+        RegisterNotificationHandler<RouteDeletedNotification>(HandleRouteDeleted, ThenMethod);
+        RegisterNotificationHandler<RouteUpdatedNotification>(HandleRouteUpdated, ThenMethod);
+        RegisterNotificationHandler<RoutesClearedNotification>(HandleRoutesCleared, ThenMethod);
 
-        RegisterNotificationHandler<ChargeAddedNotification>(HandleChargeAdded);
-        RegisterNotificationHandler<ChargeUpdatedNotification>(HandleChargeUpdated);
+        RegisterNotificationHandler<ChargeAddedNotification>(HandleChargeAdded, ThenMethod);
+        RegisterNotificationHandler<ChargeUpdatedNotification>(HandleChargeUpdated, ThenMethod);
+    }
+
+    public void ThenMethod(INotification some)
+    {
+        InvokeAsync(StateHasChanged);
+
+        // some more 
+        // some more 
+        // some more 
+        // some more 
     }
 
     public void HandleCargoDetailsSet(HasCargoDetailsSetNotification notification)
     {
         _hasCargoDetails = notification.HasDetails;
-
-        StateHasChanged();
     }
 
     private void HandleRouteAdded(RouteAddedNotification notification)
@@ -171,7 +179,7 @@
         // notify the charges were added
         foreach (var charge in charges)
         {
-            Mediator.Publish(new ChargeAddedNotification(charge));
+            Mediator.Publish(new ChargeAddedNotification(SessionId, charge));
         }
 
         StateHasChanged();
@@ -205,7 +213,7 @@
 
             foreach (var charge in _chargesByRoute[route.Id])
             {
-                await Mediator.Send(new DeleteChargeCommand(charge.Id));
+                await Mediator.Send(new DeleteChargeCommand(SessionId, charge.Id));
             }
 
             _routes.Remove(route);
@@ -219,7 +227,7 @@
         _routes.Clear();
         _chargesByRoute.Clear();
 
-        Mediator.Publish(new ChargesClearedNotification());
+        Mediator.Publish(new ChargesClearedNotification(SessionId));
 
         StateHasChanged();
     }
@@ -250,8 +258,6 @@
                 charge.Columns = notification.Charge.Columns;
             }
         }
-
-        StateHasChanged();
     }
     #endregion
 
@@ -297,15 +303,7 @@
         var route = _routes.FirstOrDefault(r => r.Id == routeId);
         if (route is not null)
         {
-            var chargeId = await Mediator.Send(new AddChargeCommand(route.Id, _selectedChargeDescription, _selectedColumns.ToDictionary(c => c, c => (decimal?)null)));
-
-            _chargesByRoute[routeId].Add(new ChargeModel
-                {
-                    Id = chargeId,
-                    AssociatedRouteId = routeId,
-                    Description = _selectedChargeDescription,
-                    Columns = _selectedColumns.ToDictionary(c => c, c => (decimal?)null)
-                });
+            var chargeId = await Mediator.Send(new AddChargeCommand(SessionId, route.Id, _selectedChargeDescription, _selectedColumns.ToDictionary(c => c, c => (decimal?)null)));
 
             _selectedChargeDescription = null;
 
@@ -328,7 +326,7 @@
                 if (result)
                 {
                     _chargesByRoute[routeId].Remove(charge);
-                    await Mediator.Send(new DeleteChargeCommand(chargeId));
+                    await Mediator.Send(new DeleteChargeCommand(SessionId, chargeId));
 
                     StateHasChanged();
                 }

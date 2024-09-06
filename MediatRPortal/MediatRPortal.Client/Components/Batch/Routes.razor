@@ -5,9 +5,9 @@
 @using MediatRPortal.Client.Features.Routes.CommandsHandlers
 
 @inject IMediator Mediator
-@inherits NotificationComponentBase<INotification>
+@inherits NotificationComponentBase<NotificationBase>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Routes <MudText Typo="Typo.caption">(id: @componentId)</MudText></MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">Routes <MudText Typo="Typo.caption">(id: @ComponentId)</MudText></MudText>
 
 <div class="d-flex justify-space-around align-center">
     <MudIcon Icon="@(_hasDetails ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)" /> Has details
@@ -94,7 +94,7 @@
             return;
         }
 
-        var routeId = await Mediator.Send(new AddRouteCommand(_newRoute.Origin, _newRoute.Destination, _newRoute.Currency));
+        var routeId = await Mediator.Send(new AddRouteCommand(SessionId, _newRoute.Origin, _newRoute.Destination, _newRoute.Currency));
 
         _routes.Add(_newRoute with { Id = routeId });
 
@@ -113,7 +113,7 @@
                     Currency = "AUD"
                 };
 
-            var routeId = await Mediator.Send(new AddRouteCommand(routeToAdd.Origin, routeToAdd.Destination, routeToAdd.Currency));
+            var routeId = await Mediator.Send(new AddRouteCommand(SessionId, routeToAdd.Origin, routeToAdd.Destination, routeToAdd.Currency));
 
             _routes.Add(routeToAdd with { Id = routeId });
         }
@@ -121,19 +121,19 @@
 
     private async Task UpdateRoute(RouteModel route)
     {
-        await Mediator.Send(new UpdateRouteCommand(route.Id, route.Origin ?? "", route.Destination ?? "", route.Currency ?? ""));
+        await Mediator.Send(new UpdateRouteCommand(SessionId, route.Id, route.Origin ?? "", route.Destination ?? "", route.Currency ?? ""));
     }
 
     private async Task RemoveRoute(RouteModel route)
     {
-        await Mediator.Send(new DeleteRouteCommand(route.Id));
+        await Mediator.Send(new DeleteRouteCommand(SessionId, route.Id));
 
         _routes.Remove(route);
     }
 
     private async Task ClearRoutes()
     {
-        await Mediator.Send(new ClearRoutesCommand());
+        await Mediator.Send(new ClearRoutesCommand(SessionId));
 
         _routes.Clear();
     }

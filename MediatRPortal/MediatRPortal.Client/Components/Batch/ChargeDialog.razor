@@ -30,6 +30,9 @@
     [CascadingParameter]
     private MudDialogInstance? MudDialog { get; set; }
 
+    [CascadingParameter]
+    private Guid SessionId { get; set; }
+
     [Parameter]
     public required RouteModel Route { get; set; }
     [Parameter]
@@ -61,7 +64,7 @@
         // MudDialog?.Close(DialogResult.Ok(Charge with { Columns = _columns }));
         // Just for tests purposes, we will use mediator to send the notification
 
-        await Mediator.Send(new UpdateChargeCommand(Route.Id, Charge.Id, Charge.Description ?? "", _columns));
+        await Mediator.Send(new UpdateChargeCommand(SessionId, Route.Id, Charge.Id, Charge.Description ?? "", _columns));
 
         MudDialog?.Close(DialogResult.Ok(Charge with { Columns = _columns }));
     }

@@ -1,9 +1,10 @@
 ﻿using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Features.Designer.Notifications;
 
 namespace MediatRPortal.Client.Features.Designer.CommandsHandlers;
 
-public record SetCargoDetailsCommand(bool HasCargoDetails) : IRequest;
+public record SetCargoDetailsCommand(Guid SessionId, bool HasCargoDetails) : RequestBase(SessionId);
 
 public class SetCargoDetailsCommandHandler : IRequestHandler<SetCargoDetailsCommand>
 {
@@ -15,6 +16,6 @@ public class SetCargoDetailsCommandHandler : IRequestHandler<SetCargoDetailsComm
 
     public Task Handle(SetCargoDetailsCommand request, CancellationToken cancellationToken)
     {
-        return _mediator.Publish(new HasCargoDetailsSetNotification(request.HasCargoDetails), cancellationToken);
+        return _mediator.Publish(new HasCargoDetailsSetNotification(request.SessionId, request.HasCargoDetails), cancellationToken);
     }
 }

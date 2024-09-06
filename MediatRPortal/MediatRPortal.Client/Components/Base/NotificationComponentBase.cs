@@ -3,135 +3,161 @@ using Microsoft.AspNetCore.Components;
 
 namespace MediatRPortal.Client.Components.Base;
 
-// Has to be generic so MediatR can register the open generic type INotificationHandler<>
-public class NotificationComponentBase<TNotification> : ComponentBase, IDisposable, INotificationHandler<TNotification> where TNotification : INotification
+/// <summary>
+/// Base component for handling notifications in a MediatR-based system.
+/// </summary>
+public class NotificationComponentBase<TNotification> : ComponentBase, IDisposable, INotificationHandler<TNotification>
+    where TNotification : NotificationBase
 {
-    // Unique key for each component to store dispose actions
-    public readonly string componentId = $"{Guid.NewGuid()}";
+    [CascadingParameter]
+    protected Guid SessionId { get; set; }
+
+    /// <summary>
+    /// Unique identifier for the component.
+    /// </summary>
+    protected readonly Guid ComponentId = Guid.NewGuid();
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-
         RegisterNotificationHandlers();
     }
 
     /// <summary>
-    /// Override this method in derived classes to register specific notification handlers
+    /// Override this method in derived classes to register specific notification handlers.
     /// </summary>
     protected virtual void RegisterNotificationHandlers() { }
 
-    protected void RegisterNotificationHandler<TNestedNotification>(Action<TNestedNotification> handler)
-        where TNestedNotification : INotification
+    /// <summary>
+    /// Registers a notification handler for a specific notification type.
+    /// </summary>
+    protected void RegisterNotificationHandler<TNestedNotification>(params Action<TNestedNotification>[] handlers)
+        where TNestedNotification : NotificationBase
     {
-        var eventHandlersKey = typeof(TNestedNotification);
+        var eventHandlersKey = new KeyType(SessionId, typeof(TNestedNotification));
 
-        if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
+        foreach (var handler in handlers)
         {
-            handlers.Add(handler);
-        }
-        else
-        {
-            NotificationComponentBaseHelper.EventHandlers[eventHandlersKey] = [handler];
-        }
-
-        //NotificationComponentBaseHelper.Disposes.Add(() =>
-        //{
-        //    if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
-        //    {
-        //        handlers.Remove(handler);
-        //        if (handlers.Count == 0)
-        //        {
-        //            NotificationComponentBaseHelper.EventHandlers.Remove(eventHandlersKey);
-        //        }
-        //    }
-        //});
-
-        if (NotificationComponentBaseHelper.Disposes.TryGetValue(componentId, out var disposes))
-        {
-            disposes.Add(() =>
+            NotificationComponentBaseHelper.AddEventHandler(eventHandlersKey, handler);
+            NotificationComponentBaseHelper.AddDisposeAction(ComponentId, () =>
             {
-                if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
-                {
-                    handlers.Remove(handler);
-                    if (handlers.Count == 0)
-                    {
-                        NotificationComponentBaseHelper.EventHandlers.Remove(eventHandlersKey);
-                    }
-                }
+                NotificationComponentBaseHelper.RemoveEventHandler(eventHandlersKey, handler);
             });
-        }
-        else
-        {
-            NotificationComponentBaseHelper.Disposes[componentId] = [() =>
-            {
-                if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var handlers))
-                {
-                    handlers.Remove(handler);
-                    if (handlers.Count == 0)
-                    {
-                        NotificationComponentBaseHelper.EventHandlers.Remove(eventHandlersKey);
-                    }
-                }
-            }];
         }
     }
 
+    /// <summary>
+    /// Handled by MediatR.
+    /// </summary>
     public Task Handle(TNotification notification, CancellationToken cancellationToken)
     {
-        var eventHandlersKey = typeof(TNotification);
-
-        if (NotificationComponentBaseHelper.EventHandlers.TryGetValue(eventHandlersKey, out var results))
-        {
-            foreach (var result in results)
-            {
-                var actionResult = result as Action<TNotification>;
-                actionResult?.Invoke(notification);
-            }
-        }
-
+        var eventHandlersKey = new KeyType(notification.SessionId, notification.GetType());
+        NotificationComponentBaseHelper.InvokeHandlers(eventHandlersKey, notification);
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        //foreach (var dispose in NotificationComponentBaseHelper.Disposes)
-        //{
-        //    dispose();
-        //}
-        //NotificationComponentBaseHelper.Disposes.Clear();
-
-        if (NotificationComponentBaseHelper.Disposes.TryGetValue(componentId, out var disposes))
-        {
-            foreach (var dispose in disposes)
-            {
-                dispose();
-            }
-            NotificationComponentBaseHelper.Disposes.Remove(componentId);
-        }
-
+        NotificationComponentBaseHelper.ExecuteDisposeActions(ComponentId);
         GC.SuppressFinalize(this);
     }
 }
 
 /// <summary>
-/// Helper class to store event handlers and dispose them when the component is disposed
+/// Represents a unique key for storing notification handlers.
+/// </summary>
+public record KeyType(Guid SessionId, Type NotificationType);
+
+/// <summary>
+/// Helper class to store event handlers and dispose actions for components
 /// </summary>
 public static class NotificationComponentBaseHelper
 {
     /// <summary>
-    /// Dictionary to store event handlers for each notification type in every component
+    /// Dictionary to store event handlers for each component. IT WILL BECOME PRIVATE OUTSIDE THE POC.
     /// </summary>
-    public static readonly Dictionary<Type, List<Delegate>> EventHandlers = [];
-
-    ///// <summary>
-    ///// List to store dispose actions for every component
-    ///// </summary>
-    //public static readonly List<Action> Disposes = [];
-
+    public static readonly Dictionary<KeyType, List<Delegate>> EventHandlers = [];
 
     /// <summary>
-    /// Dictionary to store dispose actions for belonging component
+    /// Dictionary to store dispose actions for each component. IT WILL BECOME PRIVATE OUTSIDE THE POC.
     /// </summary>
-    public static readonly Dictionary<string, List<Action>> Disposes = [];
+    public static readonly Dictionary<Guid, List<Action>> DisposeActions = [];
+    private static readonly object _lockObject = new();
+
+    public static void AddEventHandler(KeyType key, Delegate handler)
+    {
+        lock (_lockObject)
+        {
+            if (!EventHandlers.TryGetValue(key, out var handlers))
+            {
+                handlers = [];
+                EventHandlers[key] = handlers;
+            }
+            handlers.Add(handler);
+        }
+    }
+
+    public static void RemoveEventHandler(KeyType key, Delegate handler)
+    {
+        lock (_lockObject)
+        {
+            if (EventHandlers.TryGetValue(key, out var handlers))
+            {
+                handlers.Remove(handler);
+                if (handlers.Count is 0)
+                {
+                    EventHandlers.Remove(key);
+                }
+            }
+        }
+    }
+
+    public static void AddDisposeAction(Guid componentId, Action disposeAction)
+    {
+        lock (_lockObject)
+        {
+            if (!DisposeActions.TryGetValue(componentId, out var actions))
+            {
+                actions = [];
+                DisposeActions[componentId] = actions;
+            }
+
+            actions.Add(disposeAction);
+        }
+    }
+
+    public static void ExecuteDisposeActions(Guid componentId)
+    {
+        lock (_lockObject)
+        {
+            if (DisposeActions.TryGetValue(componentId, out var actions))
+            {
+                foreach (var action in actions)
+                {
+                    action();
+                }
+
+                DisposeActions.Remove(componentId);
+            }
+        }
+    }
+
+    public static void InvokeHandlers(KeyType key, object notification)
+    {
+        List<Delegate> handlersToInvoke;
+
+        lock (_lockObject)
+        {
+            if (!EventHandlers.TryGetValue(key, out var handlers))
+            {
+                return;
+            }
+            handlersToInvoke = [..handlers];
+        }
+
+        foreach (var handler in handlersToInvoke)
+        {
+            handler.DynamicInvoke(notification);
+        }
+    }
 }

@@ -1,9 +1,10 @@
 ﻿using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Models;
 
 namespace MediatRPortal.Client.Features.Routes.Notifications;
 
-public record RouteAddedNotification(RouteModel Route) : INotification;
-public record RouteUpdatedNotification(RouteModel Route) : INotification;
-public record RouteDeletedNotification(RouteModel Route) : INotification;
-public record RoutesClearedNotification : INotification;
+public record RouteAddedNotification(Guid SessionId, RouteModel Route) : NotificationBase(SessionId);
+public record RouteUpdatedNotification(Guid SessionId, RouteModel Route) : NotificationBase(SessionId);
+public record RouteDeletedNotification(Guid SessionId, RouteModel Route) : NotificationBase(SessionId);
+public record RoutesClearedNotification(Guid SessionId) : NotificationBase(SessionId);

@@ -9,12 +9,12 @@
 @inject IMediator Mediator
 @inject ISnackbar Snackbar
 
-@inherits NotificationComponentBase<INotification>
+@inherits NotificationComponentBase<NotificationBase>
 
 
 <PageTitle>Designer</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Designer <MudText Typo="Typo.caption">(id: @componentId)</MudText></MudText>
+<MudText Typo="Typo.h3" GutterBottom="true">Designer <MudText Typo="Typo.caption">(id: @ComponentId)</MudText></MudText>
 <MudText Typo="Typo.h6">@_designer.Routes.Count Routes</MudText>
 <MudText Typo="Typo.h6">@_designer.Charges.Count Charges</MudText>
 
@@ -40,7 +40,7 @@
 
     private void SetHasDetails()
     {
-        Mediator.Send(new SetCargoDetailsCommand(_designer.HasCargoDetails));
+        Mediator.Send(new SetCargoDetailsCommand(SessionId, _designer.HasCargoDetails));
     }
 
     #region Notification handlers
@@ -64,6 +64,8 @@
     private void HandleRouteAdded(RouteAddedNotification notification)
     {
         _designer.Routes.Add(notification.Route);
+
+        // Snackbar.Add($"Route {notification.Route.Origin} - {notification.Route.Destination} added", Severity.Success);
 
         StateHasChanged();
     }

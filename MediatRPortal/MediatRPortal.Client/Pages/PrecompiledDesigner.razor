@@ -11,12 +11,12 @@
 @inject IMediator Mediator
 @inject ISnackbar Snackbar
 
-@inherits NotificationComponentBase<INotification>
+@inherits NotificationComponentBase<NotificationBase>
 
 
 <PageTitle>Designer</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Designer <MudText Typo="Typo.caption">(id: @componentId)</MudText></MudText>
+<MudText Typo="Typo.h3" GutterBottom="true">Designer <MudText Typo="Typo.caption">(id: @ComponentId)</MudText></MudText>
 <MudText Typo="Typo.h6">@_designer.Routes.Count Routes</MudText>
 <MudText Typo="Typo.h6">@_designer.Charges.Count Charges</MudText>
 
@@ -47,13 +47,13 @@
         // mock an initial data
         for (int i = 0; i < 5; i++)
         {
-            var routeId = await Mediator.Send(new AddRouteCommand($"Origin {i}", $"Destination {i}", $"AUD"));
+            var routeId = await Mediator.Send(new AddRouteCommand(SessionId, $"Origin {i}", $"Destination {i}", $"AUD"));
 
             var charges = Components.Batch.Charges.MockChargeData(routeId);
 
             foreach (var charge in charges)
             {
-                await Mediator.Send(new AddChargeCommand(routeId, charge.Description, charge.Columns));
+                await Mediator.Send(new AddChargeCommand(SessionId, routeId, charge.Description, charge.Columns));
             }
         }
     }
@@ -62,7 +62,6 @@
     protected override void RegisterNotificationHandlers()
     {
         base.RegisterNotificationHandlers();
-
 
         RegisterNotificationHandler<RouteAddedNotification>(HandleRouteAdded);
         RegisterNotificationHandler<RouteUpdatedNotification>(HandleRouteUpdated);
@@ -73,7 +72,6 @@
         RegisterNotificationHandler<ChargeUpdatedNotification>(HandleChargeUpdated);
         RegisterNotificationHandler<ChargeDeletedNotification>(HandleChargeDeleted);
         RegisterNotificationHandler<ChargesClearedNotification>(HandleChargesCleared);
-
     }
 
     private void HandleRouteAdded(RouteAddedNotification notification)
@@ -143,6 +141,6 @@
 
     private void SetHasDetails()
     {
-        Mediator.Send(new SetCargoDetailsCommand(_designer.HasCargoDetails));
+        Mediator.Send(new SetCargoDetailsCommand(SessionId, _designer.HasCargoDetails));
     }
 }

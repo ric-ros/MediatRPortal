@@ -1,11 +1,12 @@
 ﻿using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Features.Charges.Notifications;
 using MediatRPortal.Client.Features.Routes.Notifications;
 using MediatRPortal.Client.Models;
 
 namespace MediatRPortal.Client.Features.Charges.CommandsHandlers;
 
-public record ClearChargesCommand : IRequest;
+public record ClearChargesCommand(Guid SessionId) : RequestBase(SessionId);
 
 public class ClearChargesCommandHandler : IRequestHandler<ClearChargesCommand>
 {
@@ -18,6 +19,6 @@ public class ClearChargesCommandHandler : IRequestHandler<ClearChargesCommand>
 
     public async Task Handle(ClearChargesCommand request, CancellationToken cancellationToken)
     {
-        await _mediator.Publish(new ChargesClearedNotification(), cancellationToken);
+        await _mediator.Publish(new ChargesClearedNotification(request.SessionId), cancellationToken);
     }
 }

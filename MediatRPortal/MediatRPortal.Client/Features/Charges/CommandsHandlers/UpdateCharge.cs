@@ -1,10 +1,11 @@
 ﻿using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Features.Charges.Notifications;
 using MediatRPortal.Client.Models;
 
 namespace MediatRPortal.Client.Features.Charges.CommandsHandlers;
 
-public record UpdateChargeCommand(Guid AssociatedRouteId, Guid ChargeId, string Description, Dictionary<string, decimal?> Columns) : IRequest;
+public record UpdateChargeCommand(Guid SessionId, Guid AssociatedRouteId, Guid ChargeId, string Description, Dictionary<string, decimal?> Columns) : RequestBase(SessionId);
 
 public class UpdateChargeCommandHandler : IRequestHandler<UpdateChargeCommand>
 {
@@ -25,6 +26,6 @@ public class UpdateChargeCommandHandler : IRequestHandler<UpdateChargeCommand>
             Columns = request.Columns
         };
 
-        await _mediator.Publish(new ChargeUpdatedNotification(charge), cancellationToken);
+        await _mediator.Publish(new ChargeUpdatedNotification(request.SessionId, charge), cancellationToken);
     }
 }

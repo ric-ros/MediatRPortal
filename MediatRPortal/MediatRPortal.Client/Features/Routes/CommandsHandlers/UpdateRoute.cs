@@ -1,10 +1,11 @@
 ﻿using MediatR;
+using MediatRPortal.Client.Components.Base;
 using MediatRPortal.Client.Features.Routes.Notifications;
 using MediatRPortal.Client.Models;
 
 namespace MediatRPortal.Client.Features.Routes.CommandsHandlers;
 
-public record UpdateRouteCommand(Guid RouteId, string Origin, string Destination, string Currency) : IRequest;
+public record UpdateRouteCommand(Guid SessionId, Guid RouteId, string Origin, string Destination, string Currency) : RequestBase(SessionId);
 
 public class UpdateRouteCommandHandler : IRequestHandler<UpdateRouteCommand>
 {
@@ -19,6 +20,6 @@ public class UpdateRouteCommandHandler : IRequestHandler<UpdateRouteCommand>
     {
         var fakeUpdatedRoute = new RouteModel { Id = request.RouteId, Origin = request.Origin, Destination = request.Destination };
 
-        await _mediator.Publish(new RouteUpdatedNotification(fakeUpdatedRoute), cancellationToken);
+        await _mediator.Publish(new RouteUpdatedNotification(request.SessionId,fakeUpdatedRoute), cancellationToken);
     }
 }
