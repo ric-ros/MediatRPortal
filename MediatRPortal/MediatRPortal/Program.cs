@@ -1,7 +1,6 @@
 using MediatR;
-using MediatRPortal.Client.Components.Base;
-using MediatRPortal.Client.Pages;
-using MediatRPortal.Client.Services;
+using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.Services;
+using MediatRPortal.Client.Features.Quotes.Services;
 using MediatRPortal.Components;
 using MudBlazor.Services;
 

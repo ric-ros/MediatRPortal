@@ -15,4 +15,16 @@
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Application\CQRS\Commands\" />
+    <Folder Include="Features\Application\CQRS\Notifications\" />
+    <Folder Include="Features\Application\CQRS\Queries\" />
+    <Folder Include="Features\Quotes\Components\" />
+    <Folder Include="Features\Quotes\CQRS\Commands\" />
+    <Folder Include="Features\Quotes\CQRS\Notifications\" />
+    <Folder Include="Features\Quotes\CQRS\Queries\" />
+    <Folder Include="Features\Quotes\Pages\Designer\Components\Charges\CQRS\Queries\" />
+    <Folder Include="Features\Quotes\Pages\Designer\Components\Routes\CQRS\Queries\" />
+  </ItemGroup>
+
 </Project>

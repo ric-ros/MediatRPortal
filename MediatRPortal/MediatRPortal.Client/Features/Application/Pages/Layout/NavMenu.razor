@@ -1,0 +1,49 @@
+﻿@using MediatRPortal.Client.Features.Application.Components.Base
+
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
+
+    <MudDivider Class="my-4" />
+
+    <MudNavLink Href="designer" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.DesignServices">Designer</MudNavLink>
+    <MudNavLink Href="precompiled-designer" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ViewModule">Precompiled Designer</MudNavLink>
+
+    <MudDivider Class="mt-15" />
+
+    <MudNavLink OnClick="StateHasChanged" Icon="@Icons.Material.Filled.Refresh">Refresh counts</MudNavLink>
+
+    <MudNavLink OnClick="() => _openEventHandlers = !_openEventHandlers">EventHandlers: @NotificationComponentBaseHelper.EventHandlers.Count</MudNavLink>
+    <MudOverlay @bind-Visible="_openEventHandlers" DarkBackground="true" ZIndex="9999" AutoClose="true" />
+    <MudPopover Open="_openEventHandlers" OverflowBehavior="OverflowBehavior.FlipAlways"
+                AnchorOrigin="Origin.CenterRight" TransformOrigin="Origin.CenterLeft" Paper="false">
+        <MudPaper Outlined Class="px-4 py-8">
+            @foreach (var eventHandler in NotificationComponentBaseHelper.EventHandlers)
+            {
+                <MudText Typo="Typo.body2">@eventHandler.Key.SessionId @eventHandler.Key.NotificationType.Name</MudText>
+                @* <MudText Typo="Typo.body2">@eventHandler.Key.Name</MudText> *@
+            }
+        </MudPaper>
+    </MudPopover>
+
+    <MudNavLink OnClick="() => _openDisposes = !_openDisposes">Components to dispose: @NotificationComponentBaseHelper.DisposeActions.Count</MudNavLink>
+    <MudOverlay @bind-Visible="_openDisposes" DarkBackground="true" ZIndex="9999" AutoClose="true" />
+    <MudPopover Open="_openDisposes" OverflowBehavior="OverflowBehavior.FlipAlways"
+                AnchorOrigin="Origin.CenterRight" TransformOrigin="Origin.CenterLeft" Paper="false">
+        <MudPaper Outlined Class="px-4 py-8">
+            <MudText Typo="Typo.caption">Written in the component's title</MudText>
+            @foreach (var dispose in NotificationComponentBaseHelper.DisposeActions)
+            {
+                <MudText Typo="Typo.body2">@dispose.Key</MudText>
+            }
+        </MudPaper>
+    </MudPopover>
+
+</MudNavMenu>
+
+@code {
+    private bool _openEventHandlers;
+    private bool _openDisposes;
+}
+

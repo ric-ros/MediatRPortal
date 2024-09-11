@@ -1,5 +1,4 @@
-﻿@using MediatRPortal.Client.Services
-
+﻿
 <Router AppAssembly="typeof(Program).Assembly">
 
     <Found Context="routeData">
@@ -8,7 +7,7 @@
             <p>
                 Session id: @SessionId
             </p>
-            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Features.Application.Pages.Layout.MainLayout)" />
             @* <FocusOnNavigate RouteData="routeData" Selector="h1" /> *@
 
         </CascadingValue>
