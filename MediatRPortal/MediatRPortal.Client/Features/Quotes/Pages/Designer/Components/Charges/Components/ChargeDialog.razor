@@ -15,7 +15,7 @@
             @foreach (var item in _columns)
             {
                 <MudItem>
-                    <MudTextField Label="@item.Key" T="decimal?"
+                    <MudTextField Label="@item.Key.ToString()" T="double?"
                                   Value="item.Value" ValueChanged="value => HandleValueChanged(item.Key, value)" />
                 </MudItem>
             }
@@ -38,7 +38,7 @@
     [Parameter]
     public required ChargeModel Charge { get; set; }
 
-    private Dictionary<string, decimal?> _columns = [];
+    private Dictionary<ChargeColumn, double?> _columns = [];
 
     protected override void OnInitialized()
     {
@@ -48,7 +48,7 @@
         }
     }
 
-    private void HandleValueChanged(string key, decimal? value)
+    private void HandleValueChanged(ChargeColumn key, double? value)
     {
         if (_columns.ContainsKey(key))
         {
@@ -60,11 +60,12 @@
 
     private async Task SendModifyCharge()
     {
-
         // MudDialog?.Close(DialogResult.Ok(Charge with { Columns = _columns }));
         // Just for tests purposes, we will use mediator to send the notification
 
-        await Mediator.Send(new UpdateChargeCommand(SessionId, Route.Id, Charge.Id, Charge.Description ?? "", _columns));
+        var newCharge = Charge with { Columns = _columns };
+
+        await Mediator.Send(new UpdateChargeCommand(SessionId, newCharge));
 
         MudDialog?.Close(DialogResult.Ok(Charge with { Columns = _columns }));
     }

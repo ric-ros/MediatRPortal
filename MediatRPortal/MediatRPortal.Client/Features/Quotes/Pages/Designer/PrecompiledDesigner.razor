@@ -1,145 +1,28 @@
 ﻿@page "/precompiled-designer"
 @using MediatR
 @using MediatRPortal.Client.Features.Quotes.Pages.Designer.CQRS.Commands
-@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges
-@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Commands
 @using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Notifications
-@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.CQRS.Commands
 @using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.CQRS.Notifications
 
-@inject IMediator Mediator
-@inject ISnackbar Snackbar
-
-@inherits NotificationComponentBase<NotificationBase>
-
+@inherits DesignerComponentBase
 
 <PageTitle>Designer</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Designer <MudText Typo="Typo.caption">(id: @ComponentId)</MudText></MudText>
-<MudText Typo="Typo.h6">@_designer.Routes.Count Routes</MudText>
-<MudText Typo="Typo.h6">@_designer.Charges.Count Charges</MudText>
+<MudText Typo="Typo.h6">@Designer.Routes.Count Routes</MudText>
+<MudText Typo="Typo.h6">@Designer.Charges.Count Charges</MudText>
 
-<MudSwitch @bind-Value="_designer.HasCargoDetails" @bind-Value:after="SetHasDetails" Label="Has details" />
+<MudSwitch @bind-Value="Designer.HasCargoDetails" @bind-Value:after="SetHasDetails" Label="Has details" />
 
 <MudGrid>
     <MudItem xs="12">
         <MudPaper Class="pa-3">
-            <MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.Routes InitialRoutes="_designer.Routes" />
+            <MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.Routes Designer="Designer" />
         </MudPaper>
     </MudItem>
     <MudItem xs="12">
         <MudPaper Class="pa-3">
-            <MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.Charges InitialCharges="_designer.Charges" InitialRoutes="_designer.Routes" />
+            <MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.ChargeTabs Designer="Designer" />
         </MudPaper>
     </MudItem>
 </MudGrid>
-
-
-
-@code {
-    private DesignerModel _designer = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        // mock an initial data
-        for (int i = 0; i < 5; i++)
-        {
-            var routeId = await Mediator.Send(new AddRouteCommand(SessionId, $"Origin {i}", $"Destination {i}", $"AUD"));
-
-            var charges = Charges.MockChargeData(routeId);
-
-            foreach (var charge in charges)
-            {
-                await Mediator.Send(new AddChargeCommand(SessionId, routeId, charge.Description, charge.Columns));
-            }
-        }
-    }
-
-    #region Notification handlers
-    protected override void RegisterNotificationHandlers()
-    {
-        base.RegisterNotificationHandlers();
-
-        RegisterNotificationHandler<RouteAddedNotification>(HandleRouteAdded);
-        RegisterNotificationHandler<RouteUpdatedNotification>(HandleRouteUpdated);
-        RegisterNotificationHandler<RouteDeletedNotification>(HandleRouteDeleted);
-        RegisterNotificationHandler<RoutesClearedNotification>(HandleRoutesCleared);
-
-        RegisterNotificationHandler<ChargeAddedNotification>(HandleChargeAdded);
-        RegisterNotificationHandler<ChargeUpdatedNotification>(HandleChargeUpdated);
-        RegisterNotificationHandler<ChargeDeletedNotification>(HandleChargeDeleted);
-        RegisterNotificationHandler<ChargesClearedNotification>(HandleChargesCleared);
-    }
-
-    private void HandleRouteAdded(RouteAddedNotification notification)
-    {
-        _designer.Routes.Add(notification.Route);
-
-        StateHasChanged();
-    }
-
-    private void HandleRouteUpdated(RouteUpdatedNotification notification)
-    {
-        var routeToUpdate = _designer.Routes.FirstOrDefault(x => x.Id == notification.Route.Id);
-
-        if (routeToUpdate is not null)
-        {
-            routeToUpdate = notification.Route;
-        }
-    }
-
-    private void HandleRouteDeleted(RouteDeletedNotification notification)
-    {
-        _designer.Routes.RemoveAll(x => x.Id == notification.Route.Id);
-
-        StateHasChanged();
-    }
-
-    private void HandleRoutesCleared(RoutesClearedNotification notification)
-    {
-        _designer.Routes.Clear();
-
-        StateHasChanged();
-    }
-
-    private void HandleChargeAdded(ChargeAddedNotification notification)
-    {
-        _designer.Charges.Add(notification.Charge);
-
-        StateHasChanged();
-    }
-
-    private void HandleChargeUpdated(ChargeUpdatedNotification notification)
-    {
-        var chargeToUpdate = _designer.Charges.FirstOrDefault(x => x.Id == notification.Charge.Id);
-
-        if (chargeToUpdate is not null)
-        {
-            chargeToUpdate.Description = notification.Charge.Description;
-        }
-
-        StateHasChanged();
-    }
-
-    private void HandleChargeDeleted(ChargeDeletedNotification notification)
-    {
-        _designer.Charges.RemoveAll(x => x.Id == notification.ChargeId);
-
-        StateHasChanged();
-    }
-
-    private void HandleChargesCleared(ChargesClearedNotification notification)
-    {
-        _designer.Charges.Clear();
-
-        StateHasChanged();
-    }
-    #endregion
-
-    private void SetHasDetails()
-    {
-        Mediator.Send(new SetCargoDetailsCommand(SessionId, _designer.HasCargoDetails));
-    }
-}

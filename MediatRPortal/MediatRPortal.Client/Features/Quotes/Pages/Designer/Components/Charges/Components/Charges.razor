@@ -1,0 +1,101 @@
+﻿@using MediatR
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.CQRS.Notifications
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Commands
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Notifications
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.Components
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.CQRS.Notifications
+
+@inject IJSRuntime JsRuntime
+@inject IDialogService DialogService
+
+@inherits NotificationComponentBase<NotificationBase>
+
+<MudText Typo="Typo.h5" GutterBottom="true">Charges</MudText>
+
+<style>
+    .route-row {
+        background-color: var(--mud-palette-dark-lighten);
+        color: var(--mud-palette-primary-text) !important;
+    }
+
+        .route-row:hover {
+            background-color: var(--mud-palette-dark-hover) !important;
+        }
+
+    .charge-row {
+        cursor: pointer;
+    }
+</style>
+
+<MudSimpleTable Hover Dense>
+    <thead>
+        <tr>
+            <th>Charges</th>
+            @foreach (var column in _selectedColumns)
+            {
+                <th>@column</th>
+            }
+            <th>
+                @if (!HasCargoDetails)
+                {
+                    <MudSelect MultiSelection Margin="Margin.Dense" Variant="Variant.Outlined" T="ChargeColumn"
+                               SelectedValues="_selectedColumns" SelectedValuesChanged="HandleSelectedColumnChanged">
+                        @foreach (var column in _allColumns)
+                        {
+                            <MudSelectItem Value="@column">
+                                @column
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Routes is null || Routes.Count is 0 || ChargesByRoute is null || ChargesByRoute.Count is 0)
+        {
+            <tr>
+                <td colspan="@(_selectedColumns.Count() + 2)">No routes</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var route in Routes ?? [])
+            {
+                var selectedChargeDescription = "";
+                var selectableCharges = _allChargeDescriptions.Except(ChargesByRoute[route.Id].Select(c => c.Description)).ToList();
+
+                <tr class="route-row">
+                    <td colspan="@(_selectedColumns.Count() + 1)">@route.Origin -> @route.Destination</td>
+                    <td>
+                        <MudSelect Value="selectedChargeDescription"
+                                   ValueChanged="(string value) => AddCharge(route.Id, value)"
+                                   Disabled="@(selectableCharges.Count is 0)"
+                                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Add"
+                                   Margin="Margin.Dense" Variant="Variant.Outlined" Label="Add Charge">
+                            @foreach (var description in selectableCharges)
+                            {
+                                <MudSelectItem Value="@description">@description</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </td>
+                </tr>
+                @foreach (var charge in ChargesByRoute[route.Id])
+                {
+                    <tr @onclick="() => HandleRowClick(charge, route)" class="charge-row">
+                        <td>@charge.Description</td>
+                        @foreach (var column in _selectedColumns)
+                        {
+                            <td>@(GetChargeValue(charge, column))</td>
+                        }
+                        <td>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                           OnClick="() => DeleteCharge(route.Id, charge.Id)" />
+                        </td>
+                    </tr>
+                }
+            }
+        }
+    </tbody>
+</MudSimpleTable>
+

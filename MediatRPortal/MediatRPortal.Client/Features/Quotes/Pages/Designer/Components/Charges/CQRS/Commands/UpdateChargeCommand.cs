@@ -5,7 +5,7 @@ using MediatRPortal.Client.Features.Quotes.Pages.Designer.Models;
 
 namespace MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Commands;
 
-public record UpdateChargeCommand(Guid SessionId, Guid AssociatedRouteId, Guid ChargeId, string Description, Dictionary<string, decimal?> Columns) : RequestBase(SessionId);
+public record UpdateChargeCommand(Guid SessionId, ChargeModel Charge) : RequestBase(SessionId);
 
 public class UpdateChargeCommandHandler : IRequestHandler<UpdateChargeCommand>
 {
@@ -18,13 +18,7 @@ public class UpdateChargeCommandHandler : IRequestHandler<UpdateChargeCommand>
 
     public async Task Handle(UpdateChargeCommand request, CancellationToken cancellationToken)
     {
-        var charge = new ChargeModel
-        {
-            Id = request.ChargeId,
-            AssociatedRouteId = request.AssociatedRouteId,
-            Description = request.Description,
-            Columns = request.Columns
-        };
+        var charge = request.Charge with { };
 
         await _mediator.Publish(new ChargeUpdatedNotification(request.SessionId, charge), cancellationToken);
     }

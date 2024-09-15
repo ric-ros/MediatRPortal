@@ -7,4 +7,7 @@ public record RouteModel : DesignerSection
     public string? Origin { get; set; }
     public string? Destination { get; set; }
     public string? Currency { get; set; }
+
+    public ChargeTypes ChargeTypes { get; set; } 
+    public JobClasses JobClasses { get; set; } 
 }

@@ -1,0 +1,77 @@
+﻿@using MediatR
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.CQRS.Commands
+
+@inherits NotificationComponentBase<NotificationBase>
+
+<style>
+    .mud-expand-panel-header {
+        background-color: var(--mud-palette-primary-lighten);
+        color: var(--mud-palette-primary-text) !important;
+    }
+</style>
+
+@if (Route is null)
+{
+    return;
+}
+
+<MudExpansionPanel HideIcon>
+    <TitleContent>
+        <div class="d-flex justify-space-between align-center">
+            <MudText Typo="Typo.h6">@Route.Origin</MudText>
+
+            <MudIcon Icon="@Icons.Material.Filled.ArrowForward" />
+
+            <MudText Typo="Typo.h6">@Route.Destination</MudText>
+
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                <MudText Typo="Typo.h6">@Route.Currency</MudText>
+            </div>
+
+            <MudMenu AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopRight"
+                     Size="Size.Small" Icon="@Icons.Material.Filled.MoreVert">
+                <MudMenuItem OnClick="() => RemoveRoute(Route)">Delete</MudMenuItem>
+            </MudMenu>
+        </div>
+    </TitleContent>
+    <ChildContent>
+        <MudGrid>
+            <MudItem xs="5">
+                <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined"
+                              Label="Origin"
+                              @bind-Value="Route.Origin" @bind-Value:after="() => UpdateRoute(Route)" />
+            </MudItem>
+            <MudItem xs="5">
+                <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined"
+                              Label="Destination"
+                              @bind-Value="Route.Destination" @bind-Value:after="() => UpdateRoute(Route)" />
+            </MudItem>
+            <MudItem xs="2">
+                <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined"
+                              Label="Currency"
+                              @bind-Value="Route.Currency" @bind-Value:after="() => UpdateRoute(Route)" />
+            </MudItem>
+        </MudGrid>
+    </ChildContent>
+</MudExpansionPanel>
+
+
+
+@code {
+    [Inject]
+    protected IMediator Mediator { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required RouteModel Route { get; set; }
+
+    private async Task UpdateRoute(RouteModel route)
+    {
+        await Mediator.Send(new UpdateRouteCommand(SessionId, route));
+    }
+
+    private async Task RemoveRoute(RouteModel route)
+    {
+        await Mediator.Send(new DeleteRouteCommand(SessionId, route.Id));
+    }
+}

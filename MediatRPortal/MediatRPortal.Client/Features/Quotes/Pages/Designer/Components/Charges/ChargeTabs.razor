@@ -1,0 +1,16 @@
+﻿@using MediatR
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.CQRS.Notifications
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Commands
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.CQRS.Notifications
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Charges.Components
+@using MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.CQRS.Notifications
+
+@inject IJSRuntime JsRuntime
+@inject IDialogService DialogService
+
+@inherits DesignerComponentBase
+
+<MudText Typo="Typo.h4" GutterBottom="true">ChargeTabs <MudText Typo="Typo.caption">(id: @ComponentId)</MudText></MudText>
+
+<Charges ChargesByRoute="_chargesByRoute" HasCargoDetails="Designer.HasCargoDetails" Routes="Designer.Routes"
+         @bind-SelectedColumns="_selectedColumns" @bind-SelectedColumns:after="HandleSelectedColumnChanged" />

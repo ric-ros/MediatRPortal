@@ -1,5 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Components;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MediatRPortal.Client.Features.Application.Components.Base;
 
@@ -9,6 +13,9 @@ namespace MediatRPortal.Client.Features.Application.Components.Base;
 public class NotificationComponentBase<TNotification> : ComponentBase, IDisposable, INotificationHandler<TNotification>
     where TNotification : NotificationBase
 {
+    [Inject]
+    protected IMediator Mediator { get; set; } = default!;
+
     [CascadingParameter]
     protected Guid SessionId { get; set; }
 
@@ -31,7 +38,7 @@ public class NotificationComponentBase<TNotification> : ComponentBase, IDisposab
     /// <summary>
     /// Registers a notification handler for a specific notification type.
     /// </summary>
-    protected void RegisterNotificationHandler<TNestedNotification>(params Action<TNestedNotification>[] handlers)
+    protected void RegisterNotificationHandler<TNestedNotification>(params Func<TNestedNotification, Task>[] handlers)
         where TNestedNotification : NotificationBase
     {
         var eventHandlersKey = new KeyType(SessionId, typeof(TNestedNotification));
@@ -49,14 +56,11 @@ public class NotificationComponentBase<TNotification> : ComponentBase, IDisposab
     /// <summary>
     /// Handled by MediatR.
     /// </summary>
-    public Task Handle(TNotification notification, CancellationToken cancellationToken)
+    public async Task Handle(TNotification notification, CancellationToken cancellationToken)
     {
         var eventHandlersKey = new KeyType(notification.SessionId, notification.GetType());
-        NotificationComponentBaseHelper.InvokeHandlers(eventHandlersKey, notification);
-        return Task.CompletedTask;
+        await NotificationComponentBaseHelper.InvokeHandlers(eventHandlersKey, notification);
     }
-
-
 
     public void Dispose()
     {
@@ -144,7 +148,7 @@ public static class NotificationComponentBaseHelper
         }
     }
 
-    public static void InvokeHandlers(KeyType key, object notification)
+    public static async Task InvokeHandlers(KeyType key, object notification)
     {
         List<Delegate> handlersToInvoke;
 
@@ -159,7 +163,7 @@ public static class NotificationComponentBaseHelper
 
         foreach (var handler in handlersToInvoke)
         {
-            handler.DynamicInvoke(notification);
+            await ((Task)handler.DynamicInvoke(notification)!);
         }
     }
 }

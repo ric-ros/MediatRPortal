@@ -5,7 +5,7 @@ using MediatRPortal.Client.Features.Quotes.Pages.Designer.Models;
 
 namespace MediatRPortal.Client.Features.Quotes.Pages.Designer.Components.Routes.CQRS.Commands;
 
-public record UpdateRouteCommand(Guid SessionId, Guid RouteId, string Origin, string Destination, string Currency) : RequestBase(SessionId);
+public record UpdateRouteCommand(Guid SessionId, RouteModel Route) : RequestBase(SessionId);
 
 public class UpdateRouteCommandHandler : IRequestHandler<UpdateRouteCommand>
 {
@@ -18,8 +18,8 @@ public class UpdateRouteCommandHandler : IRequestHandler<UpdateRouteCommand>
 
     public async Task Handle(UpdateRouteCommand request, CancellationToken cancellationToken)
     {
-        var fakeUpdatedRoute = new RouteModel { Id = request.RouteId, Origin = request.Origin, Destination = request.Destination };
+        var updatedRoute = request.Route with { };
 
-        await _mediator.Publish(new RouteUpdatedNotification(request.SessionId, fakeUpdatedRoute), cancellationToken);
+        await _mediator.Publish(new RouteUpdatedNotification(request.SessionId, updatedRoute), cancellationToken);
     }
 }
